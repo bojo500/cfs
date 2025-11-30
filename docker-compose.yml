@@ -20,16 +20,17 @@ services:
     container_name: coilflow-backend
     restart: unless-stopped
     ports:
-      - "3002:3001"  # Exposed to host
+      - "3002:3001"
     environment:
       NODE_ENV: production
       PORT: 3001
-      DB_HOST: mysql  # Uses Docker service name
-      DB_PORT: 3306   # Internal MySQL port
+      DB_HOST: mysql          # تم الإبقاء على اسم الخدمة (mysql)
+      DB_PORT: 3306
       DB_USERNAME: coilflow
       DB_PASSWORD: coilflow123
       DB_DATABASE: coilflow_db
-    depends_on: mysql
+    depends_on:              # ✅ تم التصحيح إلى صيغة القائمة (Array)
+      - mysql
     networks:
       - coilflow-network
     volumes:
@@ -49,7 +50,8 @@ services:
     networks:
       - coilflow-network
     environment:
-      - VITE_API_URL=http://localhost:3010
+      # يجب أن يشير إلى البورت الخارجي للباك إند (3002)
+      - VITE_API_URL=http://localhost:3002
 
   # phpMyAdmin Service
   phpmyadmin:
@@ -59,12 +61,13 @@ services:
     ports:
       - "8090:80"
     environment:
-      PMA_HOST: mysql  # Uses Docker service name
-      PMA_PORT: 3306   # Internal MySQL port
+      PMA_HOST: mysql        # تم الإبقاء على اسم الخدمة (mysql)
+      PMA_PORT: 3306
       PMA_USER: coilflow
       PMA_PASSWORD: coilflow123
       MYSQL_ROOT_PASSWORD: rootpassword
-    depends_on: mysql
+    depends_on:              # ✅ تم التصحيح إلى صيغة القائمة (Array)
+      - mysql
     networks:
       - coilflow-network
 
