@@ -15,5 +15,13 @@ export class CreateLoadDto {
 
   @IsString()
   @IsOptional()
+  truckTime?: string;
+
+  @IsString()
+  @IsOptional()
+  shipDate?: string;
+
+  @IsString()
+  @IsOptional()
   clientName?: string;
 }

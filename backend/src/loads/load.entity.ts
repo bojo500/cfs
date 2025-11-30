@@ -22,6 +22,12 @@ export class Load {
   timeToShip: string;
 
   @Column({ nullable: true })
+  truckTime: string;
+
+  @Column({ nullable: true })
+  shipDate: string;
+
+  @Column({ nullable: true })
   clientName: string;
 
   @Column({

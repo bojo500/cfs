@@ -1,6 +1,12 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { Load } from '../loads/load.entity';
 
+export enum CoilStatus {
+  NP = 'NP',
+  RTS = 'RTS',
+  SCRAP = 'scrap'
+}
+
 @Entity('coils')
 export class Coil {
   @PrimaryGeneratedColumn()
@@ -21,8 +27,12 @@ export class Coil {
   @Column({ nullable: true })
   orderNumber: string;
 
-  @Column({ default: 'Active' })
-  status: string;
+  @Column({
+    type: 'enum',
+    enum: CoilStatus,
+    default: CoilStatus.NP
+  })
+  status: CoilStatus;
 
   @Column({ default: false })
   isReadyFromCurrentLocation: boolean;

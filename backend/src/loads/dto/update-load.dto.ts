@@ -16,6 +16,14 @@ export class UpdateLoadDto {
 
   @IsString()
   @IsOptional()
+  truckTime?: string;
+
+  @IsString()
+  @IsOptional()
+  shipDate?: string;
+
+  @IsString()
+  @IsOptional()
   clientName?: string;
 
   @IsEnum(LoadStatus)

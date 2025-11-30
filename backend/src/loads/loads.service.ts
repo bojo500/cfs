@@ -70,10 +70,10 @@ export class LoadsService {
   }
 
   /**
-   * STRICT LOAD STATUS LOGIC
-   * - Ready: All coils are in S3 OR have isReadyFromCurrentLocation = true
-   * - Missing: At least one coil is in S1, S2, or other location AND does NOT have isReadyFromCurrentLocation = true
-   * - Shipped: Manually set by user
+   * UPDATED LOAD STATUS LOGIC
+   * - MISSING: ANY coil is in S1 or S2, OR location contains "*" suffix
+   * - READY: ALL coils are in S3 (no exceptions)
+   * - SHIPPED: Manually set by user (becomes gray)
    */
   async updateLoadStatus(loadId: number): Promise<void> {
     const load = await this.findOne(loadId);
@@ -89,17 +89,75 @@ export class LoadsService {
       return;
     }
 
-    let allReady = true;
+    let isMissing = false;
+    let allInS3 = true;
 
     for (const coil of load.coils) {
-      const isReady = coil.location === 'S3' || coil.isReadyFromCurrentLocation === true;
-      if (!isReady) {
-        allReady = false;
+      // Check if coil is in S1 or S2
+      if (coil.location === 'S1' || coil.location === 'S2') {
+        isMissing = true;
+        allInS3 = false;
         break;
+      }
+
+      // Check if location has * suffix (isReadyFromCurrentLocation)
+      if (coil.isReadyFromCurrentLocation) {
+        isMissing = true;
+        allInS3 = false;
+        break;
+      }
+
+      // Check if NOT in S3
+      if (coil.location !== 'S3') {
+        allInS3 = false;
       }
     }
 
-    load.status = allReady ? LoadStatus.READY : LoadStatus.MISSING;
+    // Load is READY only if ALL coils are in S3
+    // Load is MISSING if any coil is in S1/S2 or has * suffix
+    if (isMissing) {
+      load.status = LoadStatus.MISSING;
+    } else if (allInS3) {
+      load.status = LoadStatus.READY;
+    } else {
+      load.status = LoadStatus.MISSING;
+    }
+
     await this.loadsRepository.save(load);
+  }
+
+  async getLoadsByDate(date: string): Promise<Load[]> {
+    const loads = await this.findAll();
+    return loads.filter(load => {
+      // Check shipDate field first (YYYY-MM-DD format)
+      if (load.shipDate) {
+        return load.shipDate === date;
+      }
+      // Fallback to timeToShip for backward compatibility
+      if (load.timeToShip) {
+        try {
+          const shipDate = new Date(load.timeToShip);
+          if (!isNaN(shipDate.getTime())) {
+            return shipDate.toISOString().split('T')[0] === date;
+          }
+        } catch (e) {
+          // Invalid date, skip this load
+          return false;
+        }
+      }
+      return false;
+    });
+  }
+
+  async getTodayLoads(): Promise<Load[]> {
+    const today = new Date().toISOString().split('T')[0];
+    return this.getLoadsByDate(today);
+  }
+
+  async getTomorrowLoads(): Promise<Load[]> {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowDate = tomorrow.toISOString().split('T')[0];
+    return this.getLoadsByDate(tomorrowDate);
   }
 }
