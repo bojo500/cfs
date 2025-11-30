@@ -3,23 +3,14 @@ services:
   mysql:
     image: mysql:8.0
     container_name: coilflow-mysql
-    restart: unless-stopped
+    restart: always
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: coilflow
-      MYSQL_USER: coilflow
-      MYSQL_PASSWORD: coilflow123
+      MYSQL_DATABASE: coilflow_db
     volumes:
       - mysql_data:/var/lib/mysql
     networks:
       - coilflow-network
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-    # MySQL is NOT exposed externally - only accessible within Docker network
 
   # Backend NestJS Service
   backend:
@@ -29,30 +20,20 @@ services:
     container_name: coilflow-backend
     restart: unless-stopped
     ports:
-      - "3010:3010"  # Exposed to host
+      - "3002:3001"  # Exposed to host
     environment:
       NODE_ENV: production
-      PORT: 3010
+      PORT: 3001
       DB_HOST: mysql  # Uses Docker service name
       DB_PORT: 3306   # Internal MySQL port
       DB_USERNAME: coilflow
       DB_PASSWORD: coilflow123
-      DB_DATABASE: coilflow
-      FRONTEND_URL: http://localhost:3000
-      API_URL: http://localhost:3010
-    depends_on:
-      mysql:
-        condition: service_healthy
+      DB_DATABASE: coilflow_db
+    depends_on: mysql
     networks:
       - coilflow-network
     volumes:
       - ./backend/.env.docker:/app/.env:ro
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3010/coils"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
 
   # Frontend React Service
   frontend:
@@ -62,7 +43,7 @@ services:
     container_name: coilflow-frontend
     restart: unless-stopped
     ports:
-      - "3000:3000"  # Exposed to host (React app on port 3000)
+      - "8082:80"
     depends_on:
       - backend
     networks:
@@ -76,16 +57,14 @@ services:
     container_name: coilflow-phpmyadmin
     restart: unless-stopped
     ports:
-      - "8088:80"  # Custom port to avoid conflicts
+      - "8090:80"
     environment:
       PMA_HOST: mysql  # Uses Docker service name
       PMA_PORT: 3306   # Internal MySQL port
       PMA_USER: coilflow
       PMA_PASSWORD: coilflow123
       MYSQL_ROOT_PASSWORD: rootpassword
-    depends_on:
-      mysql:
-        condition: service_healthy
+    depends_on: mysql
     networks:
       - coilflow-network
 
