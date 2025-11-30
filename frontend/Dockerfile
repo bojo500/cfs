@@ -1,32 +1,21 @@
-# Frontend Dockerfile for CoilFlow
-FROM node:18-alpine AS builder
+FROM node:20 AS builder
 
 WORKDIR /app
 
-# Copy package files
 COPY package.json package-lock.json ./
 
-# Install dependencies
 RUN npm install
-
-# Copy source code
 COPY . .
-
-# Build the application
 RUN npm run build
 
 
-# Production image with nginx
-FROM node:18-alpine AS production
+FROM nginx:alpine AS final
 
-# Copy built files to nginx
-COPY --from=builder /app/node_modules ./node_modules
+RUN rm /etc/nginx/conf.d/default.conf
 
-# Copy nginx configuration
-COPY --from=builder /app/dist ./dist
 
-# Expose port
+COPY --from=builder /app/dist /usr/share/nginx/html
+
 EXPOSE 80
 
-# Start nginx
 CMD ["nginx", "-g", "daemon off;"]
