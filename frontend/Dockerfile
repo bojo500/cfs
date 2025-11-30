@@ -17,7 +17,7 @@ RUN npm run build
 
 
 # Production image with nginx
-FROM node:20-alpine AS production
+FROM node:18-alpine AS production
 
 # Copy built files to nginx
 COPY --from=builder /app/node_modules ./node_modules
